@@ -1,2 +1,2 @@
 * liguist-vendored
-*.spark linguist-detectable=true
+*.scala linguist-detectable=true
