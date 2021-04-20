@@ -1,0 +1,52 @@
+package com.example.bigdata
+import org.apache.spark.sql.expressions.Window
+import org.apache.spark.sql.functions.{concat, lit, row_number, udf}
+import org.apache.spark.sql.SparkSession
+
+object crime_facts {
+  def main(args: Array[String]): Unit = {
+    val username = System.getProperty("user.name")
+
+    val spark: SparkSession = SparkSession.builder
+      .appName("test")
+      .master("local[2]")
+      .getOrCreate()
+
+    val colp_DF = spark.read.format("org.apache.spark.csv").
+      option("header", true).option("inferSchema", true).
+      csv(s"/user/$username/labs/spark/externaldata/CoLP-london-crimes.csv").cache();
+
+    val mp_DF = spark.read.format("org.apache.spark.csv").
+      option("header", true).option("inferSchema", true).
+      csv(s"/user/$username/labs/spark/externaldata/MP-london-crimes.csv").cache();
+
+    val all_crimes_DF = colp_DF.
+      union(mp_DF);
+
+    val categories_DF = all_crimes_DF.select("major_category", "minor_category").distinct().withColumn("index", row_number().over(Window.orderBy(all_crimes_DF("major_category"), all_crimes_DF("minor_category"))))
+      .select("index", "major_category", "minor_category");
+
+    val date_coder = udf((month:Int) => {
+      if (month == 1) "Jan-"
+      else if (month == 2) "Feb-"
+      else if (month == 3) "Mar-"
+      else if (month == 4) "Apr-"
+      else if (month == 5) "May-"
+      else if (month == 6) "Jun-"
+      else if (month == 7) "Jul-"
+      else if (month == 8) "Aug-"
+      else if (month == 9) "Sep-"
+      else if (month == 10) "Oct-"
+      else if (month == 11) "Nov-"
+      else "Dec-"
+    })
+
+    val all_dates = all_crimes_DF.withColumn("date_id",concat(all_crimes_DF("month"),lit(""), all_crimes_DF("year")))
+      .withColumn("air_quality_id", concat(date_coder(all_crimes_DF("month")),all_crimes_DF("year")%2000) alias "air_quality_id");
+
+    all_dates.select("date_id", "air_quality_id", "major_category","minor_category","lsoa_code", "value")
+      .join(categories_DF.as("cd"), all_dates("major_category")===categories_DF("major_category") && all_dates("minor_category")===categories_DF("minor_category"), "inner")
+      .select("date_id","index", "lsoa_code","air_quality_id", "value")
+      .write.insertInto("f_crimes");
+  }
+}

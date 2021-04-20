@@ -1,0 +1,44 @@
+package com.example.bigdata
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions.{regexp_extract, udf}
+
+object nitro {
+  def main(args: Array[String]): Unit = {
+    val username = System.getProperty("user.name")
+
+    val spark: SparkSession = SparkSession.builder
+      .appName("test")
+      .master("local[2]")
+      .getOrCreate()
+
+    val df = spark.read.option("sep", ";").csv(s"/user/$username/labs/spark/externaldata/london-air-quality.txt");
+
+    val pattern1: String = """...\-..""";
+    val pattern4: String = """(?<=Nitrogen Dioxide: )[1-9\.]*""";
+
+    val df2 = df.withColumn("date", regexp_extract(df("_c0"), pattern1, 0))
+      .withColumn("nitro", regexp_extract(df("_c0"), pattern4, 0));
+
+
+    val nitro_coder = udf((nitro_value:Float) => {
+      if (nitro_value < 68.0) 1
+      else if (nitro_value < 135.0) 2
+      else if (nitro_value < 201.0) 3
+      else if (nitro_value < 268.0) 4
+      else if (nitro_value < 335.0) 5
+      else if (nitro_value < 401.0) 6
+      else if (nitro_value < 468.0) 7
+      else if (nitro_value < 535.0) 8
+      else if (nitro_value < 601.0) 9
+      else 10
+    })
+
+    val df3 = df2.withColumn("nitro_category", nitro_coder(df2("nitro")))
+      .withColumn("nitroTMP", df2("nitro").cast("float"))
+      .drop("nitro")
+      .withColumnRenamed("nitroTMP", "nitro");
+
+    df3.select("date","nitro","nitro_category")
+      .write.insertInto("w_nitro_quality");
+  }
+}

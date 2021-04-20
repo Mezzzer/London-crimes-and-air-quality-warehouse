@@ -1,0 +1,30 @@
+package com.example.bigdata
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions.{concat, lit}
+
+object date_table {
+  def main(args: Array[String]): Unit = {
+    val username = System.getProperty("user.name")
+
+    val spark: SparkSession = SparkSession.builder
+      .appName("test")
+      .master("local[2]")
+      .getOrCreate()
+
+    val colp_DF = spark.read.format("org.apache.spark.csv").
+      option("header", true).option("inferSchema", true).
+      csv(s"/user/$username/labs/spark/externaldata/CoLP-london-crimes.csv").cache();
+
+    val mp_DF = spark.read.format("org.apache.spark.csv").
+      option("header", true).option("inferSchema", true).
+      csv(s"/user/$username/labs/spark/externaldata/MP-london-crimes.csv").cache();
+
+    val all_crimes_DF = colp_DF.
+      union(mp_DF);
+
+    val all_dates = all_crimes_DF.select("month","year").distinct().withColumn("date_id",concat(all_crimes_DF("month"),lit(""), all_crimes_DF("year")));
+
+    all_dates.select("date_id","month","year").write.insertInto("w_date");
+
+  }
+}

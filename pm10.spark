@@ -1,0 +1,45 @@
+package com.example.bigdata
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions.{regexp_extract, udf}
+
+object pm10 {
+  def main(args: Array[String]): Unit = {
+    val username = System.getProperty("user.name")
+
+    val spark: SparkSession = SparkSession.builder
+      .appName("test")
+      .master("local[2]")
+      .getOrCreate()
+
+    val df = spark.read.option("sep", ";").csv(s"/user/$username/labs/spark/externaldata/london-air-quality.txt");
+
+    val pattern1: String = """...\-..""";
+    val pattern3: String = """(?<=PM10 Particulate: )[1-9\.]*""";
+
+    val df2 = df.withColumn("date", regexp_extract(df("_c0"), pattern1, 0))
+      .withColumn("pm10", regexp_extract(df("_c0"), pattern3, 0));
+
+
+    val pm10_coder = udf((pm10_value:Float) => {
+      if (pm10_value < 17.0) 1
+      else if (pm10_value < 34.0) 2
+      else if (pm10_value < 51.0) 3
+      else if (pm10_value < 59.0) 4
+      else if (pm10_value < 67.0) 5
+      else if (pm10_value < 76.0) 6
+      else if (pm10_value < 84.0) 7
+      else if (pm10_value < 92.0) 8
+      else if (pm10_value < 101.0) 9
+      else 10
+    })
+
+
+    val df3 = df2.withColumn("pm10_category", pm10_coder(df2("pm10")))
+      .withColumn("pm10TMP", df2("pm10").cast("float"))
+      .drop("pm10")
+      .withColumnRenamed("pm10TMP", "pm10");
+
+    df3.select("date","pm10","pm10_category")
+      .write.insertInto("w_pm10_quality");
+  }
+}

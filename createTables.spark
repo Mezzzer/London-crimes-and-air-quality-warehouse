@@ -1,0 +1,94 @@
+spark.sql("""DROP TABLE IF EXISTS `f_crimes`""");
+spark.sql("""DROP TABLE IF EXISTS `w_date`""");
+spark.sql("""DROP TABLE IF EXISTS `w_location`""");
+spark.sql("""DROP TABLE IF EXISTS `w_crime_category`""");
+spark.sql("""DROP TABLE IF EXISTS `w_nitro_quality`""");
+spark.sql("""DROP TABLE IF EXISTS `w_pm10_quality`""");
+spark.sql("""DROP TABLE IF EXISTS `w_pm25_quality`""");
+
+spark.sql("""CREATE TABLE `f_crimes` (
+ `date_id` string,
+ `category_id` int,
+ `lsoa_code` string,
+ `air_quality_id` string,
+ `value` int)
+ROW FORMAT SERDE
+ 'org.apache.hadoop.hive.ql.io.orc.OrcSerde'
+STORED AS INPUTFORMAT
+ 'org.apache.hadoop.hive.ql.io.orc.OrcInputFormat'
+OUTPUTFORMAT
+ 'org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat'""");
+
+spark.sql("""CREATE TABLE `w_date` (
+ `date_id` string,
+ `month` int,
+ `year` int)
+ROW FORMAT SERDE
+ 'org.apache.hadoop.hive.ql.io.orc.OrcSerde'
+STORED AS INPUTFORMAT
+ 'org.apache.hadoop.hive.ql.io.orc.OrcInputFormat'
+OUTPUTFORMAT
+ 'org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat'""")
+
+spark.sql("""CREATE TABLE `w_crime_category` (
+ `category_id` long,
+ `major_category` string,
+ `minor_category` string)
+ROW FORMAT SERDE
+ 'org.apache.hadoop.hive.ql.io.orc.OrcSerde'
+STORED AS INPUTFORMAT
+ 'org.apache.hadoop.hive.ql.io.orc.OrcInputFormat'
+OUTPUTFORMAT
+ 'org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat'""");
+
+spark.sql("""CREATE TABLE `w_location` (
+ `lsoa_code` string,
+ `district` string,
+ `population` int,
+ `county` string,
+ `parish` string,
+ `constituency` string,
+ `average_income` int,
+ `region` string,
+ `rural_urban` string,
+ `quality` int,
+ `postcode` string)
+ROW FORMAT SERDE
+ 'org.apache.hadoop.hive.ql.io.orc.OrcSerde'
+STORED AS INPUTFORMAT
+ 'org.apache.hadoop.hive.ql.io.orc.OrcInputFormat'
+OUTPUTFORMAT
+ 'org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat'""");
+
+spark.sql("""CREATE TABLE `w_pm25_quality` (
+ `pm25_id` string,
+ `value` float,
+ `category` int)
+ROW FORMAT SERDE
+ 'org.apache.hadoop.hive.ql.io.orc.OrcSerde'
+STORED AS INPUTFORMAT
+ 'org.apache.hadoop.hive.ql.io.orc.OrcInputFormat'
+OUTPUTFORMAT
+ 'org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat'""");
+
+spark.sql("""CREATE TABLE `w_pm10_quality` (
+ `pm10_id` string,
+ `value` float,
+ `category` int)
+ROW FORMAT SERDE
+ 'org.apache.hadoop.hive.ql.io.orc.OrcSerde'
+STORED AS INPUTFORMAT
+ 'org.apache.hadoop.hive.ql.io.orc.OrcInputFormat'
+OUTPUTFORMAT
+ 'org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat'""");
+
+spark.sql("""CREATE TABLE `w_nitro_quality` (
+ `nitro_id` string,
+ `value` float,
+ `category` int)
+ROW FORMAT SERDE
+ 'org.apache.hadoop.hive.ql.io.orc.OrcSerde'
+STORED AS INPUTFORMAT
+ 'org.apache.hadoop.hive.ql.io.orc.OrcInputFormat'
+OUTPUTFORMAT
+ 'org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat'""");

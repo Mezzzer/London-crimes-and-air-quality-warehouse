@@ -1,0 +1,32 @@
+package com.example.bigdata
+
+import org.apache.spark.sql.SparkSession
+
+object location_table {
+  def main(args: Array[String]): Unit = {
+    val username = System.getProperty("user.name")
+
+    val spark: SparkSession = SparkSession.builder
+      .appName("test")
+      .master("local[2]")
+      .getOrCreate()
+
+    val locations_DS = spark.read.format("org.apache.spark.csv").
+      option("header", true).option("inferSchema", true).
+      csv(s"/user/$username/labs/spark/externaldata/london-postcodes.csv").cache();
+
+    locations_DS.withColumnRenamed("LSOA CODE", "lsoa_code").
+      withColumnRenamed("District", "district").
+      withColumnRenamed("Population", "population").
+      withColumnRenamed("County", "county").
+      withColumnRenamed("Parish", "parish").
+      withColumnRenamed("Constituency", "constituency").
+      withColumnRenamed("Average Income", "average_income").
+      withColumnRenamed("Region", "region").
+      withColumnRenamed("Rural/urban", "rural_urban").
+      withColumnRenamed("Quality", "quality").
+      withColumnRenamed("Postcode", "postcode").
+      select("lsoa_code","district","population","county","parish","constituency","average_income","region","rural_urban","quality","postcode").
+      write.insertInto("w_location");
+  }
+}
